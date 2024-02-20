@@ -1,15 +1,86 @@
+from typing import Dict
 import stackapi
 import collections
 import heapq
 
 
-# We need mutable types
-VIEWS = 0
-SCORE = 1
-OWNER = 2
-QUESTION = 3
-ANSWERS = 3
-RANK = 4
+TOP_ANSWERS = 3
+SCORE_THRESHOLD = 0.2
+
+
+class ParsingError(Exception):
+    pass
+
+
+class DiscardQuestion(Exception):
+    pass
+
+
+class AnsweredQuestion:
+
+    def __init__(self, answer: dict):
+
+        if answer['score'] <= 0:
+            raise DiscardQuestion()
+
+        try:
+            self.id = answer['question_id']
+        except (TypeError, KeyError):
+            raise ParsingError()
+
+        try:
+            self.user_score = answer['score']
+        except (TypeError, KeyError):
+            raise ParsingError()
+
+        self.views: int = 0
+
+        try:
+            accepted = answer['is_accepted'] is True
+        except (TypeError, KeyError):
+            raise ParsingError()
+
+        self.useful = accepted and self.user_score >= 5
+        self.inspect_answers = not self.useful
+        self.answer_count = 0
+        self.total_score = 0
+        self.top_scores = []
+
+    def update(self, question: dict):
+
+        try:
+            self.views = question['view_count']
+        except (TypeError, KeyError):
+            raise ParsingError()
+
+        try:
+            self.answer_count = question['answer_count']
+        except (TypeError, KeyError):
+            raise ParsingError()
+
+        self.useful = self.useful or self.answer_count <= 3
+        self.inspect_answers = not self.useful
+
+    def inspect_answer(self, answer: dict):
+
+        try:
+            score = answer['score']
+        except (TypeError, KeyError):
+            raise ParsingError()
+
+        if score <= 0:
+            return
+
+        self.total_score += score
+
+        heapq.heappush(self.top_scores, score)
+        if len(self.top_scores) > TOP_ANSWERS:
+            heapq.heappop(self.top_scores)
+
+        if not self.inspect_answers:
+            return
+
+        self.useful = max(min(self.top_scores), self.total_score * SCORE_THRESHOLD) <= self.user_score
 
 
 class ImpactCalculator:
@@ -17,122 +88,65 @@ class ImpactCalculator:
     def __init__(self, site='stackoverflow', api_key=None):
         self.api = stackapi.StackAPI(site, key=api_key)
 
-        self._user_questions = collections.defaultdict(self.question_factory)
-        self._user_answers = collections.defaultdict(self.answer_factory)
-        self._answered_questions_ids = collections.defaultdict(bool)
-        self._answered_questions = collections.defaultdict(self.question_factory)
-        self._ranking_questions_ids = []
-        self._user_id = 0
+        self._questions_asked_views = collections.defaultdict(int)
+        self._answered_questions: Dict[int, AnsweredQuestion] = {}
 
     def reset(self):
-        self._user_questions.clear()
-        self._user_answers.clear()
+        self._questions_asked_views.clear()
         self._answered_questions.clear()
-        self._answered_questions_ids.clear()
-        self._ranking_questions_ids = []
-        self._user_id = 0
-
-    @staticmethod
-    def question_factory():
-        return [
-            0,  # VIEWS
-            0,  # SCORES
-            None,  # OWNER
-            []  # ANSWERS
-        ]
-
-    @staticmethod
-    def answer_factory():
-        return [
-            0,  # VIEWS
-            0,  # SCORE
-            None,  # OWNER
-            None  # QUESTION
-        ]
-
-    @staticmethod
-    def answered_question_factory():
-        return [
-            0,  # VIEWS
-            None  # QUESTION
-        ]
 
     def _fetch_user_questions(self, user_id):
 
         response = self.api.fetch('users/{ids}/questions', ids=user_id)
         for question in response['items']:
-            self._user_questions[question['question_id']] = [
-                question['view_count'],
-                question['score'],
-                question['owner']['user_id']]
+            self._questions_asked_views[question['question_id']] = question['view_count']
 
     def _fetch_user_answers(self, user_id):
 
         response = self.api.fetch('users/{ids}/answers', ids=user_id)
         for answer in response['items']:
-            if answer['score'] <= 0:
+
+            question_id = answer['question_id']
+
+            if question_id in self._questions_asked_views:
+                # already counted as a question
                 continue
 
-            if answer['question_id'] in self._user_questions:
+            try:
+                question = AnsweredQuestion(answer)
+            except DiscardQuestion:
                 continue
 
-            get_rank = not answer['is_accepted'] and (answer['score'] < 5)
-
-            self._user_answers[answer['answer_id']] = [
-                0,
-                answer['score'],
-                answer['owner']['user_id'],
-                answer['question_id'],
-                get_rank]
-
-            self._answered_questions_ids[answer['question_id']] = get_rank
+            self._answered_questions[question_id] = question
 
     def _fetch_answered_questions(self):
 
-        total = len(self._answered_questions_ids)
-        keys = list(self._answered_questions_ids.keys())
+        total = len(self._answered_questions)
+        question_ids = list(self._answered_questions.keys())
 
         for split in range(0, total, self.api.page_size):
             response = self.api.fetch(
                 'questions/{ids}',
-                ids=keys[split:split + self.api.page_size])
+                ids=question_ids[split:split + self.api.page_size])
 
             for question in response['items']:
                 question_id = question['question_id']
 
-                self._answered_questions[question_id] = [
-                    question['view_count'],
-                    0,
-                    question['owner']['user_id'],
-                    []]
-
-                check_rank = self._answered_questions_ids[question_id]
-                check_rank = check_rank and question['answer_count'] > 3
-
-                if check_rank:
-                    self._ranking_questions_ids.append(question_id)
+                self._answered_questions[question_id].update(question)
 
     def _fetch_question_answers(self):
-        total = len(self._ranking_questions_ids)
+
+        question_ids = [question.id for question in self._answered_questions.values() if question.inspect_answers]
+        total = len(question_ids)
 
         for split in range(0, total, self.api.page_size):
             response = self.api.fetch('questions/{ids}/answers',
-                                      ids=self._ranking_questions_ids[
-                                          split:split + self.api.page_size])
+                                      ids=question_ids[split:split + self.api.page_size])
 
             for answer in response['items']:
-                if answer['score'] <= 0:
-                    continue
-
                 question_id = answer['question_id']
-                self._answered_questions[question_id][SCORE] += answer['score']
 
-                heapq.heappush(
-                    self._answered_questions[question_id][ANSWERS],
-                    answer['score'])
-                if len(self._answered_questions[question_id][ANSWERS]) > 3:
-                    heapq.heappop(
-                        self._answered_questions[question_id][ANSWERS])
+                self._answered_questions[question_id].inspect_answer(answer)
 
     def impact(self, user_id: int):
 
@@ -141,16 +155,8 @@ class ImpactCalculator:
         self._fetch_answered_questions()
         self._fetch_question_answers()
 
-        result = sum(question[VIEWS] for question in self._user_questions.values())
+        result = sum(self._questions_asked_views.values())
 
-        for answer in self._user_answers.values():
-            question_id = answer[QUESTION]
-            question = self._answered_questions[question_id]
-            if question[ANSWERS]:
-                min_score = min(question[ANSWERS])
-                if (answer[SCORE] < min_score and answer[SCORE] < 0.2 *
-                        question[SCORE]):
-                    continue
-            result += self._answered_questions[question_id][VIEWS]
+        result += sum(question.views for question in self._answered_questions.values() if question.useful)
 
         return result
