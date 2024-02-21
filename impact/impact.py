@@ -3,7 +3,7 @@ import collections
 from impact import answered
 
 
-class ImpactCalculator:
+class StackExchangeImpact:
 
     def __init__(self, site='stackoverflow', api_key=None):
         self.api = stackapi.StackAPI(site, key=api_key)
@@ -68,15 +68,21 @@ class ImpactCalculator:
 
                 self._answered_questions[question_id].inspect_answer(answer)
 
-    def impact(self, user_id: int):
+    def _calculate_impact(self):
+
+        result = sum(self._questions_asked_views.values())
+
+        result += sum(question.views for question in self._answered_questions.values() if question.useful)
+
+        return result
+
+    def calculate(self, user_id: int):
 
         self._fetch_user_questions(user_id)
         self._fetch_user_answers(user_id)
         self._fetch_answered_questions()
         self._fetch_question_answers()
 
-        result = sum(self._questions_asked_views.values())
-
-        result += sum(question.views for question in self._answered_questions.values() if question.useful)
+        result = self._calculate_impact()
 
         return result
