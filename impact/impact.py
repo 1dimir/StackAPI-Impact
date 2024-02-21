@@ -1,4 +1,3 @@
-from typing import Dict
 import stackapi
 import collections
 from impact import answered
@@ -10,7 +9,7 @@ class ImpactCalculator:
         self.api = stackapi.StackAPI(site, key=api_key)
 
         self._questions_asked_views = collections.defaultdict(int)
-        self._answered_questions: Dict[int, answered.Question] = {}
+        self._answered_questions: dict[int, answered.Question] = {}
 
     def reset(self):
         self._questions_asked_views.clear()
