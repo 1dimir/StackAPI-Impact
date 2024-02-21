@@ -1,2 +1,2 @@
-from impact.impact import ImpactCalculator
+from impact.impact import StackExchangeImpact
 from impact import answered

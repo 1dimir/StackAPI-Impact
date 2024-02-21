@@ -1,3 +1,4 @@
+from typing import Any, Optional
 import stackapi
 import collections
 from impact import answered
@@ -5,8 +6,11 @@ from impact import answered
 
 class StackExchangeImpact:
 
-    def __init__(self, site='stackoverflow', api_key=None):
-        self.api = stackapi.StackAPI(site, key=api_key)
+    def __init__(self, site='stackoverflow', api_key=None, api: Optional[Any] = None):
+        if api is None:
+            self.api = stackapi.StackAPI(site, key=api_key)
+        else:
+            self.api = api
 
         self._questions_asked_views = collections.defaultdict(int)
         self._answered_questions: dict[int, answered.Question] = {}
