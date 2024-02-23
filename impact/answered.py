@@ -15,21 +15,21 @@ class Question:
 
         try:
             answer_score = int(answer['score'])
-        except (TypeError, KeyError):
-            raise ValueError("Cannot retrieve the score of the answer data")
+        except (TypeError, KeyError) as exception:
+            raise ValueError("Cannot retrieve the score of the answer data") from exception
 
         if answer_score <= 0:
             raise DiscardQuestion()
 
         try:
             self.id: int = int(answer['question_id'])
-        except (TypeError, KeyError):
-            raise ValueError("Cannot retrieve question_id of the answer")
+        except (TypeError, KeyError) as exception:
+            raise ValueError("Cannot retrieve question_id of the answer") from exception
 
         try:
             accepted = answer['is_accepted'] is True
-        except (TypeError, KeyError):
-            raise ValueError("Cannot identify if the answer was accepted")
+        except (TypeError, KeyError) as exception:
+            raise ValueError("Cannot identify if the answer was accepted") from exception
 
         self.user_score: int = answer_score
         self.useful: bool = accepted and self.user_score >= 5
@@ -44,13 +44,13 @@ class Question:
 
         try:
             self.views = question['view_count']
-        except (TypeError, KeyError):
-            raise ValueError("Cannot retrieve view_count of the question")
+        except (TypeError, KeyError) as exception:
+            raise ValueError("Cannot retrieve view_count of the question") from exception
 
         try:
             self.answer_count = question['answer_count']
-        except (TypeError, KeyError):
-            raise ValueError("Cannot retrieve the number of answers for the question")
+        except (TypeError, KeyError) as exception:
+            raise ValueError("Cannot retrieve the number of answers for the question") from exception
 
         self.useful = self.useful or self.answer_count <= 3
         self.inspect_answers = not self.useful
@@ -59,8 +59,8 @@ class Question:
 
         try:
             score = int(answer['score'])
-        except (TypeError, KeyError):
-            raise ValueError("Cannot retrieve the score of answers for the question")
+        except (TypeError, KeyError) as exception:
+            raise ValueError("Cannot retrieve the score of answers for the question") from exception
 
         if score <= 0:
             return
