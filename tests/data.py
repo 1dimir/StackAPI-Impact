@@ -5,10 +5,8 @@ def question(**kwargs) -> Question:
     result = Question(kwargs)
 
     for key, value in kwargs.items():
-        try:
+        if hasattr(result, key):
             result.__setattr__(key, value)
-        except AttributeError:
-            pass
 
     return result
 

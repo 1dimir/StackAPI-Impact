@@ -3,6 +3,7 @@ import heapq
 
 TOP_ANSWERS: int = 3
 SCORE_THRESHOLD: float = 0.2
+HALF_NICE = 5
 
 
 class DiscardQuestion(Exception):
@@ -32,7 +33,7 @@ class Question:
             raise ValueError("Cannot identify if the answer was accepted") from exception
 
         self.user_score: int = answer_score
-        self.useful: bool = accepted or self.user_score >= 5
+        self.useful: bool = accepted or self.user_score >= HALF_NICE
         self.inspect_answers: bool = not self.useful
 
         self.views: int = 0
@@ -52,10 +53,13 @@ class Question:
         except (TypeError, ValueError, KeyError) as exception:
             raise ValueError("Cannot retrieve the number of answers for the question") from exception
 
-        self.useful = self.useful or self.answer_count <= 3
+        self.useful = self.useful or self.answer_count <= TOP_ANSWERS
         self.inspect_answers = not self.useful
 
     def inspect_answer(self, answer: dict):
+
+        if not self.inspect_answers:
+            return
 
         try:
             score = int(answer['score'])
@@ -71,7 +75,4 @@ class Question:
         if len(self.top_scores) > TOP_ANSWERS:
             heapq.heappop(self.top_scores)
 
-        if not self.inspect_answers:
-            return
-
-        self.useful = max(SCORE_THRESHOLD * self.total_score, min(self.top_scores)) <= self.user_score
+        self.useful = min(SCORE_THRESHOLD * self.total_score, *self.top_scores) <= self.user_score

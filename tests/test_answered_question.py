@@ -1,6 +1,8 @@
 import pytest
 from impact import answered
-from tests.fixtures import (regular_answered_question, accepted_answered_question)
+from tests.fixtures import (
+    regular_answered_question, accepted_answered_question, answered_question_dont_inspect,
+    answered_question_require_inspection)
 
 
 class TestAnsweredQuestion:
@@ -155,7 +157,7 @@ class TestAnsweredQuestion:
 
     def test_17_update_top_answer(self, regular_answered_question):
         views = 1024
-        answer_count = 2
+        answer_count = answered.TOP_ANSWERS - 1
 
         regular_answered_question.update(
             {'view_count': views,
@@ -191,3 +193,59 @@ class TestAnsweredQuestion:
         assert accepted_answered_question.answer_count == answer_count
         assert accepted_answered_question.useful is True
         assert accepted_answered_question.inspect_answers is False
+
+    def test_20_inspect_dont_inspect_answers(self, answered_question_dont_inspect):
+
+        low_score = answered.HALF_NICE - 1
+        high_score = low_score + 10
+
+        answered_question_dont_inspect.user_score = low_score
+        answer = {'score': high_score}
+
+        for _ in range(answered.TOP_ANSWERS):
+            answered_question_dont_inspect.inspect_answer(answer)
+
+        assert answered_question_dont_inspect.useful is True
+        assert answered_question_dont_inspect.inspect_answers is False
+
+    def test_21_inspect_all_scored_above(self, answered_question_require_inspection):
+
+        low_score = answered.HALF_NICE - 1
+
+        # make it that other questions with higher score occupy all top answers above the user answer
+        high_score = max(low_score + 1, int(low_score * (1 / answered.SCORE_THRESHOLD - 1) / answered.TOP_ANSWERS + 0.5))
+
+        answered_question_require_inspection.user_score = low_score
+        answered_question_require_inspection.inspect_answer({'score': low_score})
+
+        for _ in range(answered.TOP_ANSWERS):
+            answered_question_require_inspection.inspect_answer({'score': high_score})
+
+        assert answered_question_require_inspection.useful is False
+
+    def test_22_inspect_equally_scored(self, answered_question_require_inspection):
+
+        score = answered.HALF_NICE - 1
+
+        answered_question_require_inspection.user_score = score
+
+        for _ in range(answered.TOP_ANSWERS + 1):
+            answered_question_require_inspection.inspect_answer({'score': score})
+
+        assert answered_question_require_inspection.useful is True
+
+    def test_23_inspect_in_top(self, answered_question_require_inspection):
+
+        user_score = answered.HALF_NICE - 1
+        low_score = user_score - 1
+        high_score = user_score / answered.SCORE_THRESHOLD
+
+        answered_question_require_inspection.user_score = user_score
+
+        answered_question_require_inspection.inspect_answer({'score': low_score})
+        answered_question_require_inspection.inspect_answer({'score': user_score})
+
+        for _ in range(answered.TOP_ANSWERS - 1):
+            answered_question_require_inspection.inspect_answer({'score': high_score})
+
+        assert answered_question_require_inspection.useful is True
