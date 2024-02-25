@@ -1,13 +1,7 @@
 # questions only: 7311772
 # wrong representation: 7367567 - 22814 vs 26k on site
-from impact import StackExchangeImpact
 import tests.data
-import pytest
-
-
-@pytest.fixture
-def impact_no_api():
-    return StackExchangeImpact(api=None)
+from tests.fixtures import (impact_no_api)
 
 
 class TestCalculateImpact:
