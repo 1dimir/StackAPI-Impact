@@ -39,3 +39,5 @@ ANSWERED_QUESTIONS_20_1000_HALF_USEFUL = {
         score=1,
         useful=question_id > 10) for question_id in range(1, 21)
 }
+
+USER_ID = 1

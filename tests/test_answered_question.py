@@ -212,8 +212,12 @@ class TestAnsweredQuestion:
 
         low_score = answered.HALF_NICE - 1
 
+        def roundup(number: float):
+            return int(number) + bool(number % 1)
+
         # make it that other questions with higher score occupy all top answers above the user answer
-        high_score = max(low_score + 1, int(low_score * (1 / answered.SCORE_THRESHOLD - 1) / answered.TOP_ANSWERS + 0.5))
+        high_score = max(low_score + 1,
+                         roundup(low_score * (1 / answered.SCORE_THRESHOLD - 1) / answered.TOP_ANSWERS))
 
         answered_question_require_inspection.user_score = low_score
         answered_question_require_inspection.inspect_answer({'score': low_score})
