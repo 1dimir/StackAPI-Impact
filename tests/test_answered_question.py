@@ -1,5 +1,6 @@
 import pytest
 from impact import answered
+import tests.data as sample
 from tests.fixtures import (
     regular_answered_question, accepted_answered_question, answered_question_dont_inspect,
     answered_question_require_inspection)
@@ -24,13 +25,17 @@ class TestAnsweredQuestion:
 
         with pytest.raises(answered.DiscardQuestion):
             _ = answered.Question(
-                {'score': 0})
+                {'score': 0,
+                 'question_id': sample.QUESTION_ID,
+                 'is_accepted': False})
 
     def test_04_init_negative_score(self):
 
         with pytest.raises(answered.DiscardQuestion):
             _ = answered.Question(
-                {'score': -3})
+                {'score': -3,
+                 'question_id': sample.QUESTION_ID,
+                 'is_accepted': False})
 
     def test_05_no_question_id(self):
 
@@ -124,38 +129,70 @@ class TestAnsweredQuestion:
         assert question.total_score == 0
         assert question.top_scores == []
 
-    def test_12_update_no_view_count(self, regular_answered_question):
+    def test_12_init_zero_score_accepted_answer(self):
+
+        question = answered.Question({
+            'score': 0,
+            'question_id': 1,
+            'is_accepted': True
+        })
+
+        assert question.user_score == 0
+        assert question.useful is True
+        assert question.inspect_answers is False
+        assert question.views == 0
+        assert question.answer_count == 0
+        assert question.total_score == 0
+        assert question.top_scores == []
+
+    def test_13_init_negative_score_accepted_answer(self):
+
+        question = answered.Question({
+            'score': sample.NEGATIVE_SCORE,
+            'question_id': sample.QUESTION_ID,
+            'is_accepted': True
+        })
+
+        assert question.user_score == sample.NEGATIVE_SCORE
+        assert question.useful is True
+        assert question.inspect_answers is False
+        assert question.views == 0
+        assert question.answer_count == 0
+        assert question.total_score == 0
+        assert question.top_scores == []
+
+    def test_14_update_no_view_count(self, regular_answered_question):
         with pytest.raises(ValueError,
                            match="Cannot retrieve view_count of the question"):
             regular_answered_question.update({})
 
-    def test_13_update_str_view_count(self, regular_answered_question):
+    def test_15_update_str_view_count(self, regular_answered_question):
         with pytest.raises(ValueError,
                            match="Cannot retrieve view_count of the question"):
             regular_answered_question.update(
                 {'view_count': "12K"})
 
-    def test_14_update_no_answer_count(self, regular_answered_question):
+    def test_16_update_no_answer_count(self, regular_answered_question):
         with pytest.raises(ValueError,
                            match="Cannot retrieve the number of answers for the question"):
             regular_answered_question.update(
                 {'view_count': 42})
 
-    def test_15_update_none_answer_count(self, regular_answered_question):
+    def test_17_update_none_answer_count(self, regular_answered_question):
         with pytest.raises(ValueError,
                            match="Cannot retrieve the number of answers for the question"):
             regular_answered_question.update(
                 {'view_count': 42,
                  'answer_count': None})
 
-    def test_16_update_str_answer_count(self, regular_answered_question):
+    def test_18_update_str_answer_count(self, regular_answered_question):
         with pytest.raises(ValueError,
                            match="Cannot retrieve the number of answers for the question"):
             regular_answered_question.update(
                 {'view_count': 42,
                  'answer_count': "one"})
 
-    def test_17_update_top_answer(self, regular_answered_question):
+    def test_19_update_top_answer(self, regular_answered_question):
         views = 1024
         answer_count = answered.TOP_ANSWERS - 1
 
@@ -168,7 +205,7 @@ class TestAnsweredQuestion:
         assert regular_answered_question.useful is True
         assert regular_answered_question.inspect_answers is False
 
-    def test_18_update_many_answers(self, regular_answered_question):
+    def test_20_update_many_answers(self, regular_answered_question):
         views = 1024
         answer_count = 12
 
@@ -181,7 +218,7 @@ class TestAnsweredQuestion:
         assert regular_answered_question.useful is False
         assert regular_answered_question.inspect_answers is True
 
-    def test_19_update_already_useful(self, accepted_answered_question):
+    def test_21_update_already_useful(self, accepted_answered_question):
         views = 1024
         answer_count = 12
 
@@ -194,7 +231,7 @@ class TestAnsweredQuestion:
         assert accepted_answered_question.useful is True
         assert accepted_answered_question.inspect_answers is False
 
-    def test_20_inspect_dont_inspect_answers(self, answered_question_dont_inspect):
+    def test_22_inspect_dont_inspect_answers(self, answered_question_dont_inspect):
 
         low_score = answered.HALF_NICE - 1
         high_score = low_score + 10
@@ -208,7 +245,7 @@ class TestAnsweredQuestion:
         assert answered_question_dont_inspect.useful is True
         assert answered_question_dont_inspect.inspect_answers is False
 
-    def test_21_inspect_all_scored_above(self, answered_question_require_inspection):
+    def test_23_inspect_all_scored_above(self, answered_question_require_inspection):
 
         low_score = answered.HALF_NICE - 1
 
@@ -227,7 +264,7 @@ class TestAnsweredQuestion:
 
         assert answered_question_require_inspection.useful is False
 
-    def test_22_inspect_equally_scored(self, answered_question_require_inspection):
+    def test_24_inspect_equally_scored(self, answered_question_require_inspection):
 
         score = answered.HALF_NICE - 1
 
@@ -238,7 +275,7 @@ class TestAnsweredQuestion:
 
         assert answered_question_require_inspection.useful is True
 
-    def test_23_inspect_in_top(self, answered_question_require_inspection):
+    def test_25_inspect_in_top(self, answered_question_require_inspection):
 
         user_score = answered.HALF_NICE - 1
         low_score = user_score - 1

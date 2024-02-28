@@ -19,9 +19,6 @@ class Question:
         except (TypeError, ValueError, KeyError) as exception:
             raise ValueError("Cannot retrieve the score of the answer data") from exception
 
-        if answer_score <= 0:
-            raise DiscardQuestion()
-
         try:
             self.id: int = int(answer['question_id'])
         except (TypeError, ValueError, KeyError) as exception:
@@ -31,6 +28,13 @@ class Question:
             accepted = answer['is_accepted'] is True
         except (TypeError, KeyError) as exception:
             raise ValueError("Cannot identify if the answer was accepted") from exception
+
+        # Zero score accepted answers are useful, examples:
+        #   user:23478142, user:3275112, user:8357
+        # Also negative score accepted answers are useful too, example:
+        #   user:23167706
+        if answer_score <= 0 and not accepted:
+            raise DiscardQuestion()
 
         self.user_score: int = answer_score
         self.useful: bool = accepted or self.user_score >= HALF_NICE
