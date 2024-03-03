@@ -6,13 +6,13 @@ from impact import answered
 
 class StackExchangeImpact:
 
-    def __init__(self, site='stackoverflow', api_key=None, api: Optional[Any] = None, keep_cache: bool = False):
+    def __init__(self, site='stackoverflow', api_key=None, api: Optional[Any] = None, reset_cache: bool = True):
         if api is None:
             self.api: stackapi.StackAPI = stackapi.StackAPI(site, key=api_key)
         else:
             self.api: Any = api
 
-        self._keep_cache: bool = keep_cache
+        self.reset_cache: bool = reset_cache
         self._questions_asked_views: DefaultDict[int, int] = collections.defaultdict(int)
         self._answered_questions: dict[int, answered.Question] = {}
 
@@ -118,5 +118,8 @@ class StackExchangeImpact:
         self._evaluate_answers(question_ids)
 
         result = self._calculate_impact()
+
+        if self.reset_cache:
+            self.reset()
 
         return result
