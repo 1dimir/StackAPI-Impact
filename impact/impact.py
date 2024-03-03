@@ -8,7 +8,7 @@ class StackExchangeImpact:
 
     def __init__(self, site='stackoverflow', api_key=None, api: Optional[Any] = None, reset_cache: bool = True):
         if api is None:
-            self.api: stackapi.StackAPI = stackapi.StackAPI(site, key=api_key)
+            self.api: stackapi.StackAPI = stackapi.StackAPI(site, key=api_key, max_pages=10000)
         else:
             self.api: Any = api
 
