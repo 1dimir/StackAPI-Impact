@@ -242,6 +242,8 @@ class TestAnsweredQuestion:
         for _ in range(answered.TOP_ANSWERS):
             answered_question_dont_inspect.inspect_answer(answer)
 
+        answered_question_dont_inspect.evaluate_answers()
+
         assert answered_question_dont_inspect.useful is True
         assert answered_question_dont_inspect.inspect_answers is False
 
@@ -262,6 +264,8 @@ class TestAnsweredQuestion:
         for _ in range(answered.TOP_ANSWERS):
             answered_question_require_inspection.inspect_answer({'score': high_score})
 
+        answered_question_require_inspection.evaluate_answers()
+
         assert answered_question_require_inspection.useful is False
 
     def test_24_inspect_equally_scored(self, answered_question_require_inspection):
@@ -272,6 +276,8 @@ class TestAnsweredQuestion:
 
         for _ in range(answered.TOP_ANSWERS + 1):
             answered_question_require_inspection.inspect_answer({'score': score})
+
+        answered_question_require_inspection.evaluate_answers()
 
         assert answered_question_require_inspection.useful is True
 
@@ -288,5 +294,7 @@ class TestAnsweredQuestion:
 
         for _ in range(answered.TOP_ANSWERS - 1):
             answered_question_require_inspection.inspect_answer({'score': high_score})
+
+        answered_question_require_inspection.evaluate_answers()
 
         assert answered_question_require_inspection.useful is True

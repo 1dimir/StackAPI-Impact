@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, DefaultDict
 import stackapi
 import collections
 from impact import answered
@@ -6,13 +6,14 @@ from impact import answered
 
 class StackExchangeImpact:
 
-    def __init__(self, site='stackoverflow', api_key=None, api: Optional[Any] = None):
+    def __init__(self, site='stackoverflow', api_key=None, api: Optional[Any] = None, keep_cache: bool = False):
         if api is None:
-            self.api = stackapi.StackAPI(site, key=api_key)
+            self.api: stackapi.StackAPI = stackapi.StackAPI(site, key=api_key)
         else:
-            self.api = api
+            self.api: Any = api
 
-        self._questions_asked_views = collections.defaultdict(int)
+        self._keep_cache: bool = keep_cache
+        self._questions_asked_views: DefaultDict[int, int] = collections.defaultdict(int)
         self._answered_questions: dict[int, answered.Question] = {}
 
     def reset(self):
@@ -82,7 +83,23 @@ class StackExchangeImpact:
             for answer in response['items']:
                 question_id = answer['question_id']
 
-                self._answered_questions[question_id].inspect_answer(answer)
+                try:
+                    self._answered_questions[question_id].inspect_answer(answer)
+                except KeyError:
+                    pass  # unexpected question, skip it
+
+    def _evaluate_answers(self, question_ids: Optional[list] = None):
+
+        if question_ids is None:
+            for question in self._answered_questions.values():
+                question.evaluate_answers()  # inspect_answers is checked inside
+            return
+
+        for question_id in question_ids:
+            try:
+                self._answered_questions[question_id].evaluate_answers()
+            except KeyError:
+                pass  # unexpected question, skip it
 
     def _calculate_impact(self):
 
@@ -98,6 +115,7 @@ class StackExchangeImpact:
         self._fetch_user_answers(user_id)
         question_ids = self._fetch_answered_questions()
         self._fetch_question_answers(question_ids)
+        self._evaluate_answers(question_ids)
 
         result = self._calculate_impact()
 

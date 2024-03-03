@@ -79,4 +79,9 @@ class Question:
         if len(self.top_scores) > TOP_ANSWERS:
             heapq.heappop(self.top_scores)
 
+    def evaluate_answers(self):
+
+        if not self.inspect_answers:
+            return
+
         self.useful = min(SCORE_THRESHOLD * self.total_score, *self.top_scores) <= self.user_score

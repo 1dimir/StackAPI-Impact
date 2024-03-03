@@ -51,6 +51,7 @@ class TestFetchAnsweredQuestions:
 
         assert len(instance._answered_questions) == 0
         assert len(questions_to_inspect) == 0
+        assert api.fetch.call_count == 0
 
     def test_02_already_useful(self, api: mock.Mock):
 
