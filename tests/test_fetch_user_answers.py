@@ -2,15 +2,14 @@ import tests.data as sample
 import impact
 import impact.answered as answered
 import unittest.mock as mock
-import stackapi
+from tests.fixtures import api
 import random
 
 
 class TestFetchUserAnswers:
 
-    def test_01_no_answers(self):
-        api_factory = mock.Mock(stackapi.StackAPI, autospec=True)
-        api = api_factory.return_value
+    def test_01_no_answers(self, api: mock.Mock):
+
         api.fetch.return_value = {
             'backoff': 0,
             'has_more': False,
@@ -25,10 +24,8 @@ class TestFetchUserAnswers:
 
         assert len(instance._answered_questions) == 0
 
-    def test_02_zero_score_answer(self):
+    def test_02_zero_score_answer(self, api: mock.Mock):
 
-        api_factory = mock.Mock(stackapi.StackAPI, autospec=True)
-        api = api_factory.return_value
         api.fetch.return_value = {
             'backoff': 0, 'has_more': False, 'page': 1, 'quota_max': 300, 'quota_remaining': 292, 'total': 0,
             'items': [{
@@ -43,10 +40,8 @@ class TestFetchUserAnswers:
 
         assert len(instance._answered_questions) == 0
 
-    def test_03_zero_score_accepted_answer(self):
+    def test_03_zero_score_accepted_answer(self, api: mock.Mock):
 
-        api_factory = mock.Mock(stackapi.StackAPI, autospec=True)
-        api = api_factory.return_value
         api.fetch.return_value = {
             'backoff': 0, 'has_more': False, 'page': 1, 'quota_max': 300, 'quota_remaining': 292, 'total': 0,
             'items': [{
@@ -64,10 +59,8 @@ class TestFetchUserAnswers:
         assert isinstance(instance._answered_questions[sample.QUESTION_ID], answered.Question)
         assert instance._answered_questions[sample.QUESTION_ID].useful is True
 
-    def test_04_nice_answer(self):
+    def test_04_nice_answer(self, api: mock.Mock):
 
-        api_factory = mock.Mock(stackapi.StackAPI, autospec=True)
-        api = api_factory.return_value
         api.fetch.return_value = {
             'backoff': 0, 'has_more': False, 'page': 1, 'quota_max': 300, 'quota_remaining': 292, 'total': 0,
             'items': [{
@@ -85,14 +78,12 @@ class TestFetchUserAnswers:
         assert isinstance(instance._answered_questions[sample.QUESTION_ID], answered.Question)
         assert instance._answered_questions[sample.QUESTION_ID].useful is True
 
-    def test_05_self_answers(self):
+    def test_05_self_answers(self, api: mock.Mock):
 
         total = 4
         questions = [sample.QUESTION_ID + index for index in range(total)]
         answers = [sample.ANSWER_ID + index for index in range(total)]
 
-        api_factory = mock.Mock(stackapi.StackAPI, autospec=True)
-        api = api_factory.return_value
         api.fetch.return_value = {
             'backoff': 0, 'has_more': False, 'page': 1, 'quota_max': 300, 'quota_remaining': 292, 'total': 0,
             'items': [{'is_accepted': False,
@@ -123,12 +114,10 @@ class TestFetchUserAnswers:
 
         assert len(instance._answered_questions) == 0
 
-    def test_06_low_score_answer(self):
+    def test_06_low_score_answer(self, api: mock.Mock):
 
         low_score = answered.HALF_NICE - 1
 
-        api_factory = mock.Mock(stackapi.StackAPI, autospec=True)
-        api = api_factory.return_value
         api.fetch.return_value = {
             'backoff': 0, 'has_more': False, 'page': 1, 'quota_max': 300, 'quota_remaining': 292, 'total': 0,
             'items': [{
