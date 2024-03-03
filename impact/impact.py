@@ -45,8 +45,14 @@ class StackExchangeImpact:
 
     def _fetch_answered_questions(self):
 
+        """
+        Populates collection of answered question with question-related information.
+        Returns a list of question ids that require answer inspection to determine answer usefulness.
+        """
+
         total = len(self._answered_questions)
         question_ids = list(self._answered_questions.keys())
+        questions_to_inspect = []
 
         for split in range(0, total, self.api.page_size):
             response = self.api.fetch(
@@ -57,10 +63,16 @@ class StackExchangeImpact:
                 question_id = question['question_id']
 
                 self._answered_questions[question_id].update(question)
+                if self._answered_questions[question_id].inspect_answers:
+                    questions_to_inspect.append(question_id)
 
-    def _fetch_question_answers(self):
+        return questions_to_inspect
 
-        question_ids = [question.id for question in self._answered_questions.values() if question.inspect_answers]
+    def _fetch_question_answers(self, question_ids: Optional[list] = None):
+
+        if question_ids is None:
+            question_ids = [question.id for question in self._answered_questions.values() if question.inspect_answers]
+
         total = len(question_ids)
 
         for split in range(0, total, self.api.page_size):
@@ -84,8 +96,8 @@ class StackExchangeImpact:
 
         self._fetch_user_questions(user_id)
         self._fetch_user_answers(user_id)
-        self._fetch_answered_questions()
-        self._fetch_question_answers()
+        question_ids = self._fetch_answered_questions()
+        self._fetch_question_answers(question_ids)
 
         result = self._calculate_impact()
 
