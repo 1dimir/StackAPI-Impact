@@ -1,7 +1,7 @@
 import pytest
 import unittest.mock as mock
 import stackapi
-import impact
+import stackapi_impact as impact
 import tests.data as sample
 
 

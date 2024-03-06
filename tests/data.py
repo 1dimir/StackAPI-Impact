@@ -1,4 +1,4 @@
-from impact.answered import Question
+from stackapi_impact.answered import Question
 
 
 def question(**kwargs) -> Question:

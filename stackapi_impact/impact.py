@@ -1,7 +1,7 @@
 from typing import Any, Optional, DefaultDict
 import stackapi
 import collections
-from impact import answered
+from stackapi_impact import answered
 
 
 class StackExchangeImpact:

@@ -1,5 +1,5 @@
 import tests.data as sample
-import impact
+import stackapi_impact as impact
 from tests.fixtures import impact_no_api
 
 
@@ -17,7 +17,7 @@ class TestEvaluateAnswers:
             inspect_answers=True,
             question_id=sample.QUESTION_ID,
             score=1,
-            top_scores=[1,2,3],
+            top_scores=[1, 2, 3],
             total_score=100,
             is_accepted=False)
 

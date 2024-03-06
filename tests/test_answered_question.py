@@ -1,5 +1,5 @@
 import pytest
-from impact import answered
+from stackapi_impact import answered
 import tests.data as sample
 from tests.fixtures import (
     regular_answered_question, accepted_answered_question, answered_question_dont_inspect,

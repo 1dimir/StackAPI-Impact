@@ -1,8 +1,7 @@
 import tests.data as sample
-import impact
+import stackapi_impact as impact
 import unittest.mock as mock
 from tests.fixtures import api
-import stackapi  # noqa
 import random
 
 
