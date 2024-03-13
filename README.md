@@ -1,7 +1,17 @@
 StackAPI-Impact
 ===============
 
-...
+Stack Exchange API doesn't provide a direct way to get the impact of a user. 
+Still considering [the definition of impact](https://meta.stackoverflow.com/a/320520/21350362), 
+it seems possible to reproduce the calculations, 
+as all the required data is available in API: views, questions and answers. 
+This project is an implementation of that idea. 
+Practical limitations make an application scope very narrow though. 
+Someday the impact _should_ be exposed in the public API.  
+
+Retrieving the large collections of user’s answers or questions ends up with throttling,
+despite the use of an api key. 
+Due to that, the calculation of the top user’s impact may take tens of minutes.
 
 Installing
 ----------
@@ -15,7 +25,7 @@ $ pip install git+https://github.com/1dimir/StackAPI-Impact
 Usage
 -----
 
-Via command line interface:
+Command line interface:
 
 ```none
 usage: get-so-impact [-h] [-k API_KEY] user_id
@@ -26,7 +36,7 @@ $ get-so-impact 21350362
 > 21650
 ```
 
-Or as a package:
+As a package:
 
 ```python
 from stackapi_impact import StackExchangeImpact
