@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "StackAPI-Impact"
-version = "1.0.1"
+version = "1.0.3"
 authors = [
   { name="Dmitry Sorokin", email="a@dimir.name" },
 ]
@@ -19,6 +19,9 @@ classifiers = [
 dependencies = [
   "StackAPI"
 ]
+
+[project.scripts]
+get-so-impact = "stackapi_impact.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/1dimir/StackAPI-Impact"
